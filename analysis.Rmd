@@ -1,0 +1,102 @@
+---
+title: "Effects of BAC Levels on Beerpong Performance"
+author: "Perry Deng"
+date: "11/12/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Introduction
+![Relevant XKCD Comic](xkcd.png){width=50%}
+
+There is a legend known as Ballmer Peak, a reference to Steve Ballmer of Microsoft, that consuming a moderate amount of alcohol can improve cognitive ability (see illustration from xkcd in above figure). [Jarosz et al.](https://www.sciencedirect.com/science/article/pii/S1053810012000037) shows that intoxicated men with BAC of approximate 0.075 outperform somber subjects on creative problem solving. However it does not show whether there exists an optimal intoxication level. In other words, is there an optimal intoxication level between "buzzed", "tipsy", and "sh\*\*-faced"? In this study we attempt to answer through this question by collecting experimental data on beer pong. Beer pong is popular drinking game among young adults in which ping pong balls are thrown like basketballs into a setup of plastic red SOLO cups some distance away (for more details, consult [wikihow](https://www.wikihow.com/Play-Beer-Pong)). We obtain 12 measurements from 4 subjects under 3 treatments with differing intoxication levels (0.03, 0.06, and 0.10 intended BAC), and detect statistically significant differences between treatments. Subjects appear to perform best when they are tipsy around 0.06 BAC. This suggests that there is an optimal strategy for playing beer pong by consuming "just the right amount" of alcohol. In addition, we also find evidence that beer pong might bore its participants if played daily.
+<center><img src="https://www.wikihow.com/Play-Beer-Pong#/Image:Play-Beer-Pong-Step-4-Version-6.jpg"></center>
+
+## Experiment Design
+To study different intoxication levels, we prepare 3 dosage levels of 180 proof alcohol to achieve 0.03 (low), 0.06 (medium), and 0.10 (high) blood alcohol content (BAC) in subjects. For reference, 0.08 BAC is the federal threshold for criminal DUI in the United States. We recruit 4 drinking aged college students as subjects. Due to the ongoing coronavirus pandemic in the US, there was difficulty in recruiting more subjects. Dosages are customized for each subject given their body weight to achieve the desired BAC level using an [online calculator][http://www.clevelandclinic.org/health/interactive/alcohol_calculator.asp]. Each dose is also mixed with sugary juice to cover up the alcoholic taste, so that the subject cannot reliably tell the alcoholic content by taste alone. Repeated measures are administered on each subjects, each receiving one dose of all three treatments in random order. This yields a Randomized Complete Block Design (RCBD) with $N=12$ reponses total, with each subject being considered a block. Each dose is administered on a different night to maintain independence between responses, and subjects are not informed of dosages until after experiment conclusion. Each subjects are asked to wait for 30 mins after each dose in order to digest the ethanol. They also practice for around 5 minutes before measurements, to reduce the possible variance introduced by different levels of subject familiarity with the game. Each measurement is taken by recording the number of ping pong balls scored into a standard setup of 10 cups over 20 shots. For simplicity, subjects are asked to throw ping pong balls into the cups in succession, without drinking beer in between shots, and cups are not removed when they are scored, unlike the actual beer pong game.
+
+## Experiment Results
+
+### Data Table
+```{r}
+df = read.csv('pong.csv')
+df$Dosage <- factor(df$Dosage, levels=c("Low", "Medium", "High"))
+
+library(purrr)
+library(reshape2)
+transposed_data = dcast(df[c("Subject", "Dosage", "Score")], Subject~Dosage, value.var="Score")
+rownames(transposed_data) = map(transposed_data[, 1], function(initial) paste("Subject ", initial))
+colnames(transposed_data) = map(colnames(transposed_data), function(level) paste(level, " Dose"))
+transposed_data[, 1] = NULL
+library(knitr)
+kable(transposed_data, caption="Beer Pong Scores")
+```
+
+### Visualization
+First, let us visualize the data with a boxplot.
+```{r}
+dot_colors = rgb(0.3,0.5,0.4,0.6)
+boxplot(df$Score ~ df$Dosage, col=dot_colors, ylab="Scores", xlab="Dosage", ylim=c(0, 20))
+```
+
+From above plot, we can see that medium dosage has the highest distribution of scores, which intuitively makes sense - the subjects might be drunk enough to be relaxed but not enough to significantly impair their senses. However, the differences might be caused by random statistical noise rather than actual dosage effects. We thus investigate whether the differences are statistically significant.
+
+### Hypothesis Testing
+Our statistical model can be expressed as
+$$y_{ij}=\mu + \tau_{i} + \beta_{j} + \epsilon_{ij}$$
+where $y_{ij}$ and $\epsilon_{ij}$ are the accuracy and random error for the $i$th treatment and $j$th subject respectively, $\mu$ is the mean accuracy, $\tau_{i}$ is the $i$th treatment effect, $\beta_{j}$ is the $j$th block effect, $1\leq i\leq3$, $1\leq j\leq4$. We can set up null hypothesis $$H_0: \tau_1 = \tau_2 = \tau_3$$
+
+#### ANOVA test
+ANOVA detects statistically significant differences in average strength with $P(F>F_0 | H_0)=0.0412$.
+```{r}
+model = aov(Score ~ Dosage + Subject, data=df)
+print(summary(model))
+```
+
+#### Treatment Comparisons
+We can also use Tukey's method to see which pairs of treatments have statistically different effects. Using a confidence level of 95%, we conclude that there is significant difference between medium dosage and low dosage, but the difference between estimated high and medium or high and low dosage effects are not large enough to be considered statistically significant with our sample size.
+```{r}
+library(multcompView)
+tukey_comparisons = TukeyHSD(x=model, 'Dosage', conf.level=0.95)
+plot(tukey_comparisons, col=dot_colors)
+```
+
+#### Model Adequacy
+We check several assumptions to confirm the validity of our ANOVA test. Firstly, we check that the residuals are normally distributed. We see below that the quantiles of the residual roughly correspond to the theoretical normal distribution quantiles. Shapiro-wilk test also fails to reject the hypothesis that the residuals are normally distributed (p=0.3534).
+```{r}
+df$Residuals = model$residuals
+library(car)
+qqPlot(df$Residuals, col=dot_colors, col.lines="brown", pch=19, envelope=FALSE)
+print(shapiro.test(df$Residuals))
+```
+
+We then check that residuals have about the same variance with regard to each treatment level and subject. We see that there is no large deviations in between residual variances of different dosages. While it looks like high dosage produce slightly smaller residuals, as do subject B, the deviations are not large enough in magnitude to be considered statistically signifcant by Levene's Test.
+```{r}
+boxplot(Residuals~Dosage, data=df, col=dot_colors)
+print(leveneTest(Score~Dosage, data=df))
+boxplot(Residuals~Subject, data=df, col=dot_colors)
+print(leveneTest(Score~Subject, data=df))
+```
+
+We also visualize model residuals over scores to check for irregularities. 
+```{r}
+plot(df$Score, df$Residuals, col=dot_colors, pch=19)
+abline(h=0,col="brown")
+```
+
+There appears to be no obvious relationship between the score measured.
+
+Lastly, we visualize model residuals over the order at which the subject receives the dose.
+```{r}
+plot(df$Order, df$Residuals, col=dot_colors, pch=19)
+abline(h=0,col="brown")
+```
+
+There appears to be a strong negative relationship between residuals and the dose order. This suggests that subjects perform worse as time goes on. It might be explained by increased fatigue or boredom with playing beer pong over the 3 days during which our experiment is conducted. Luckily, the order for each treatment is randomized and thus this finding does not affect the validity of our statistical analysis.
+
+We therefore conclude that the assumptions for our ANOVA model are reasonably met. We reject the null hypothesis that the dosage effects are the same with high confidence, and conclude that there is a statistically significant difference between effects of different ethanol dosages on beer pong performance.
+
+## Summary
+To summarize, we find strong evidence that there is an optimal strategy for consuming alcohol to achieve the best performance on beer pong games, and it may not be consuming as much as possible or as little as possible, but somewhere in between. We also find evidence that beer pong is a boring game that should not be played too frequently.

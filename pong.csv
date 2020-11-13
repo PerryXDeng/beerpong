@@ -1,0 +1,13 @@
+Subject,Dosage,Score,Order
+E,Low,8,1
+E,Medium,8,2
+E,High,7,3
+B,Low,5,1
+B,High,6,2
+B,Medium,8,3
+N,High,9,1
+N,Medium,13,2
+N,Low,6,3
+P,Medium,10,1
+P,Low,5,2
+P,High,4,3
