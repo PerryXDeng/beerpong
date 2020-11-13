@@ -97,7 +97,7 @@ print(shapiro.test(df$Residuals))
 # W = 0.9274, p-value = 0.3534
 ```
 
-We then check that residuals have about the same variance with regard to each treatment level and subject. We see that there is no large deviations in between residual variances of different dosages. While it looks like high dosage produce slightly smaller residuals, as do subject B, the deviations are not large enough in magnitude to be considered statistically signifcant by Levene's Test (p=0.69, p=0.52).
+We then check that residuals have about the same variance with regard to each treatment level and subject. We see that there is no large deviations in between residual variances of different dosages. While it looks like high dosage measurements have slightly smaller residuals, as does subject B, the deviations are not large enough in magnitude to be considered statistically signifcant by Levene's Test (p=0.69, p=0.52).
 ```{r, message=FALSE, fig.align='center', results='hide'}
 boxplot(Residuals~Dosage, data=df, col=dot_colors)
 print(leveneTest(Score~Dosage, data=df))
@@ -120,7 +120,7 @@ plot(df$Score, df$Residuals, col=dot_colors, pch=19)
 abline(h=0,col="brown")
 ```
 
-There appears to be no obvious relationship between the score measured.
+There appears to be no obvious relationship between the score measured and the model residuals.
 
 Lastly, we visualize model residuals over the order at which the subject receives the dose.
 ```{r, message=FALSE, fig.align='center', results='hide'}
