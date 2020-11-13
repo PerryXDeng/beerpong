@@ -57,7 +57,7 @@ From above plot, we can see that medium dosage has the highest distribution of s
 ### Hypothesis Testing
 Our statistical model can be expressed as
 $$y_{ij}=\mu + \tau_{i} + \beta_{j} + \epsilon_{ij}$$
-where $y_{ij}$ and $\epsilon_{ij}$ are the accuracy and random error for the $i$th treatment and $j$th subject respectively, $\mu$ is the mean beer pong score, $\tau_{i}$ is the $i$th treatment effect, $\beta_{j}$ is the $j$th block effect, $1\leq i\leq3$, $1\leq j\leq4$. We can set up null hypothesis $$H_0: \tau_1 = \tau_2 = \tau_3$$
+where $y_{ij}$ and $\epsilon_{ij}$ are the score and random error for the $i$th treatment and $j$th subject respectively, $\mu$ is the mean beer pong score, $\tau_{i}$ is the $i$th treatment effect, $\beta_{j}$ is the $j$th block effect, and $1\leq i\leq3$, $1\leq j\leq4$. Our null hypothesis is $$H_0: \tau_1 = \tau_2 = \tau_3$$
 
 #### ANOVA test
 Through analysis of variance (ANOVA) we detect statistically significant differences in average strength with $P(F>F_0 | H_0)=0.0412$.
